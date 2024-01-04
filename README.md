@@ -20,15 +20,10 @@ The programming and testing were done on OpenJDK v17.0.8.1, Spring v3.2.1 and Gr
 
 The documents are accessible by cloning this repository using :
 ```sh
-    git clone https://github.com/CelineNi2/Automacorp.git
+git clone https://github.com/CelineNi2/Automacorp.git
 ```
 
 The compilation can be done with : 
 ```sh
-    ./gradlew build
+./gradlew build
 ```
-
-
-## Online version
-
-This version has also been deployed on my CleverCloud : ... 
