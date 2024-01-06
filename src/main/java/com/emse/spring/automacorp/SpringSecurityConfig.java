@@ -1,5 +1,6 @@
 package com.emse.spring.automacorp;
 
+/*
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -16,6 +17,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 public class SpringSecurityConfig {
+
 
     public static final String ROLE_USER = "USER";
     public static final String ROLE_ADMIN = "ADMIN";
@@ -46,4 +48,4 @@ public class SpringSecurityConfig {
                 .httpBasic(withDefaults())
                 .build();
     }
-}
+}*/

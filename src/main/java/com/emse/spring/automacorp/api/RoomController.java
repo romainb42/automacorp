@@ -3,10 +3,14 @@ package com.emse.spring.automacorp.api;
 import com.emse.spring.automacorp.dao.HeaterDao;
 import com.emse.spring.automacorp.dao.RoomDao;
 import com.emse.spring.automacorp.dao.WindowDao;
-import com.emse.spring.automacorp.dto.Heater;
 import com.emse.spring.automacorp.dto.Room;
 import com.emse.spring.automacorp.dto.RoomMapper;
-import com.emse.spring.automacorp.model.*;
+import com.emse.spring.automacorp.model.BuildingEntity;
+import com.emse.spring.automacorp.model.RoomEntity;
+import com.emse.spring.automacorp.model.SensorEntity;
+import com.emse.spring.automacorp.model.SensorType;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +28,8 @@ public class RoomController {
     private final RoomDao roomDao;
     private final WindowDao windowDao;
     private final HeaterDao heaterDao;
+
+    private static Logger logger = LogManager.getLogger(RoomController.class);
 
     public RoomController(RoomDao roomDao, WindowDao windowDao, HeaterDao heaterDao) {
         this.roomDao = roomDao;
@@ -47,30 +53,45 @@ public class RoomController {
 
     @PostMapping
     public ResponseEntity<Room> create(@RequestBody RoomCommand room) {
-        SensorEntity currentTemperature = new SensorEntity(SensorType.TEMPERATURE,"temperatureSensor");
-        currentTemperature.setId(1L);
-        currentTemperature.setValue(15.0);
-        SensorEntity outsideTemperature = new SensorEntity(SensorType.TEMPERATURE, "Outside temperature");
-        outsideTemperature.setId(2L);
-        outsideTemperature.setValue(19.0);
+        SensorEntity currentTemperature = new SensorEntity(SensorType.TEMPERATURE,room.currentTemperature().getName());
+        currentTemperature.setId(room.currentTemperature().getId());
+        currentTemperature.setValue(room.currentTemperature().getValue());
+        SensorEntity outsideTemperature = new SensorEntity(SensorType.TEMPERATURE, room.building().getName());
+        outsideTemperature.setId(room.building().getId());
+        outsideTemperature.setValue(room.building().getOutsideTemperature().getValue());
         BuildingEntity building = new BuildingEntity(room.building().getName(), outsideTemperature);
-        RoomEntity entity = new RoomEntity(1, room.name(), currentTemperature,20.0 , building);
+        building.setId(room.building().getId());
+        building.setRooms(room.building().getRooms());
+        RoomEntity entity = new RoomEntity(room.floor(), room.name(), currentTemperature,room.targetTemperature() , building);
         RoomEntity saved = roomDao.save(entity);
         return ResponseEntity.ok(RoomMapper.of(saved));
     }
 
     @PutMapping(path = "/{id}")
     public ResponseEntity<Room> update(@PathVariable Long id, @RequestBody RoomCommand room) {
-        RoomEntity entity = roomDao.findById(id).orElse(null);
-        if (entity == null) {
-            return ResponseEntity.badRequest().build();
+        if (id==null && room==null){
+            logger.fatal("There are no id nor room...");
+            return null;
         }
-        entity.setFloor(room.floor());
-        entity.setName(room.name());
-        entity.setCurrentTemperature(room.currentTemperature());
-        entity.setTargetTemperature(room.targetTemperature());
-        entity.setWindows(room.windows());
-        return ResponseEntity.ok(RoomMapper.of(entity));
+        else if (id==null || room==null) {
+            logger.error("There is a missing argument between id and room.");
+            return null;
+        }
+        else {
+            RoomEntity entity = roomDao.findById(id).orElse(null);
+            if (entity == null) {
+                logger.warn("The given room id (" + id +")doesn't exist.");
+                return ResponseEntity.badRequest().build();
+            }
+            logger.debug("Beginning of room " + id + "'s update");
+            entity.setFloor(room.floor());
+            entity.setName(room.name());
+            entity.setCurrentTemperature(room.currentTemperature());
+            entity.setTargetTemperature(room.targetTemperature());
+            entity.setWindows(room.windows());
+            logger.info("The room " + id + " has successfully been modified.");
+            return ResponseEntity.ok(RoomMapper.of(entity));
+        }
     }
 
     @DeleteMapping(path = "/{id}")
