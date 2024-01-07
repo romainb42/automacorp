@@ -1,8 +1,13 @@
 package com.emse.spring.automacorp.api;
 
+import com.emse.spring.automacorp.dao.RoomDao;
+import com.emse.spring.automacorp.dao.SensorDao;
 import com.emse.spring.automacorp.dao.WindowDao;
 import com.emse.spring.automacorp.dto.Window;
 import com.emse.spring.automacorp.dto.WindowMapper;
+import com.emse.spring.automacorp.model.RoomEntity;
+import com.emse.spring.automacorp.model.SensorEntity;
+import com.emse.spring.automacorp.model.SensorType;
 import com.emse.spring.automacorp.model.WindowEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +23,15 @@ import java.util.stream.Collectors;
 @Transactional
 public class WindowController {
     private final WindowDao windowDao;
+    private final RoomDao roomDao;
+    private final SensorDao sensorDao;
 
-    public WindowController(WindowDao windowDao) {
+    public WindowController(WindowDao windowDao, RoomDao roomDao, SensorDao sensorDao) {
         this.windowDao = windowDao;
+        this.roomDao = roomDao;
+        this.sensorDao = sensorDao;
     }
+
 
     @GetMapping
     public List<Window> findAll() {
@@ -39,7 +49,17 @@ public class WindowController {
 
     @PostMapping
     public ResponseEntity<Window> create(@RequestBody WindowCommand window) {
-        WindowEntity entity = new WindowEntity(window.name(), window.windowStatus(), window.room());
+        RoomEntity room = roomDao.findById(window.roomId()).orElse(null);
+
+        if (room==null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        SensorEntity windowStatus = new SensorEntity(SensorType.STATUS, window.name() + " status");
+        windowStatus.setValue(window.windowStatus());
+        sensorDao.save(windowStatus);
+
+        WindowEntity entity = new WindowEntity(window.name(), windowStatus, room);
         WindowEntity saved = windowDao.save(entity);
         return ResponseEntity.ok(WindowMapper.of(saved));
     }
@@ -47,17 +67,40 @@ public class WindowController {
     @PutMapping(path = "/{id}")
     public ResponseEntity<Window> update(@PathVariable Long id, @RequestBody WindowCommand window) {
         WindowEntity entity = windowDao.findById(id).orElse(null);
-        if (entity == null) {
+        RoomEntity room = roomDao.findById(window.roomId()).orElse(null);
+
+        if (entity == null || room==null) {
             return ResponseEntity.badRequest().build();
         }
+
+        SensorEntity windowStatus = new SensorEntity(SensorType.STATUS, window.name() + " status");
+        windowStatus.setValue(window.windowStatus());
+        sensorDao.save(windowStatus);
+
         entity.setName(window.name());
-        entity.setWindowStatus(window.windowStatus());
-        entity.setRoom(window.room());
+        entity.setWindowStatus(windowStatus);
+        entity.setRoom(room);
         return ResponseEntity.ok(WindowMapper.of(entity));
     }
 
     @DeleteMapping(path = "/{id}")
     public void delete(@PathVariable Long id) {
         windowDao.deleteById(id);
+    }
+
+
+    @PutMapping(path = "/{id}/switch")
+    public ResponseEntity<Window> update(@PathVariable Long id) {
+        WindowEntity entity = windowDao.findById(id).orElse(null);
+        if (entity == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        double newWindowValue = 0.0;
+        if (entity.getWindowStatus().getValue()==0.0){
+            newWindowValue = 1.0;
+        }
+        SensorEntity windowStatus = entity.getWindowStatus();
+        windowStatus.setValue(newWindowValue);
+        return ResponseEntity.ok(WindowMapper.of(entity));
     }
 }

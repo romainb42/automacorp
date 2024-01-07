@@ -1,9 +1,12 @@
 package com.emse.spring.automacorp.api;
 
 import com.emse.spring.automacorp.dao.BuildingDao;
+import com.emse.spring.automacorp.dao.SensorDao;
 import com.emse.spring.automacorp.dto.Building;
 import com.emse.spring.automacorp.dto.BuildingMapper;
 import com.emse.spring.automacorp.model.BuildingEntity;
+import com.emse.spring.automacorp.model.SensorEntity;
+import com.emse.spring.automacorp.model.SensorType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +22,11 @@ import java.util.stream.Collectors;
 public class BuildingController {
 
     private final BuildingDao buildingDao;
+    private final SensorDao sensorDao;
 
-    public BuildingController(BuildingDao buildingDao) {
+    public BuildingController(BuildingDao buildingDao, SensorDao sensorDao) {
         this.buildingDao = buildingDao;
+        this.sensorDao = sensorDao;
     }
 
     @GetMapping
@@ -40,7 +45,11 @@ public class BuildingController {
 
     @PostMapping
     public ResponseEntity<Building> create(@RequestBody BuildingCommand building) {
-        BuildingEntity entity = new BuildingEntity(building.name(), building.outsideTemperature());
+        SensorEntity outsideTemperature = new SensorEntity(SensorType.TEMPERATURE, building.name() + " temperature");
+        outsideTemperature.setValue(building.outsideTemperature());
+        sensorDao.save(outsideTemperature);
+
+        BuildingEntity entity = new BuildingEntity(building.name(), outsideTemperature);
         BuildingEntity saved = buildingDao.save(entity);
         return ResponseEntity.ok(BuildingMapper.of(saved));
     }
@@ -51,8 +60,14 @@ public class BuildingController {
         if (entity == null) {
             return ResponseEntity.badRequest().build();
         }
+
+        SensorEntity outsideTemperature = sensorDao.findById(entity.getOutsideTemperature().getId()).orElse(null);
+        if (outsideTemperature == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        outsideTemperature.setValue(building.outsideTemperature());
+
         entity.setName(building.name());
-        entity.setOutsideTemperature(building.outsideTemperature());
         return ResponseEntity.ok(BuildingMapper.of(entity));
     }
 

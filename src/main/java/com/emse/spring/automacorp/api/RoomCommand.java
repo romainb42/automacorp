@@ -7,5 +7,5 @@ import com.emse.spring.automacorp.model.WindowEntity;
 
 import java.util.Set;
 
-public record RoomCommand(String name, Integer floor, SensorEntity currentTemperature, Double targetTemperature, Set<WindowEntity> windows, Set<HeaterEntity> heaters, BuildingEntity building) {
+public record RoomCommand(String name, Integer floor, Double currentTemperature, Double targetTemperature, Long buildingId) {
 }

@@ -1,9 +1,13 @@
 package com.emse.spring.automacorp.api;
 
 import com.emse.spring.automacorp.dao.HeaterDao;
+import com.emse.spring.automacorp.dao.RoomDao;
+import com.emse.spring.automacorp.dao.SensorDao;
 import com.emse.spring.automacorp.dto.Heater;
 import com.emse.spring.automacorp.dto.HeaterMapper;
-import com.emse.spring.automacorp.model.HeaterEntity;
+import com.emse.spring.automacorp.dto.Window;
+import com.emse.spring.automacorp.dto.WindowMapper;
+import com.emse.spring.automacorp.model.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -18,9 +22,13 @@ import java.util.stream.Collectors;
 @Transactional
 public class HeaterController {
     private final HeaterDao heaterDao;
+    private final SensorDao sensorDao;
+    private final RoomDao roomDao;
 
-    public HeaterController(HeaterDao heaterDao) {
+    public HeaterController(HeaterDao heaterDao, SensorDao sensorDao, RoomDao roomDao) {
         this.heaterDao = heaterDao;
+        this.sensorDao = sensorDao;
+        this.roomDao = roomDao;
     }
 
     @GetMapping
@@ -39,7 +47,16 @@ public class HeaterController {
 
     @PostMapping
     public ResponseEntity<Heater> create(@RequestBody HeaterCommand heater) {
-        HeaterEntity entity = new HeaterEntity(heater.name(), heater.heaterStatus(), heater.room());
+        RoomEntity room = roomDao.findById(heater.roomId()).orElse(null);
+        if (room == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        SensorEntity heaterStatus = new SensorEntity(SensorType.POWER, heater.name() + " power");
+        heaterStatus.setValue(heater.heaterStatus());
+        sensorDao.save(heaterStatus);
+
+        HeaterEntity entity = new HeaterEntity(heater.name(), heaterStatus, room);
         HeaterEntity saved = heaterDao.save(entity);
         return ResponseEntity.ok(HeaterMapper.of(saved));
     }
@@ -50,14 +67,35 @@ public class HeaterController {
         if (entity == null) {
             return ResponseEntity.badRequest().build();
         }
+
+        SensorEntity heaterStatus = sensorDao.findById(entity.getHeaterStatus().getId()).orElse(null);
+        if (heaterStatus == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        heaterStatus.setValue(heater.heaterStatus());
+
         entity.setName(heater.name());
-        entity.setHeaterStatus(heater.heaterStatus());
-        entity.setRoom(heater.room());
+        entity.setPower(heater.power());
         return ResponseEntity.ok(HeaterMapper.of(entity));
     }
 
     @DeleteMapping(path = "/{id}")
     public void delete(@PathVariable Long id) {
         heaterDao.deleteById(id);
+    }
+
+    @PutMapping(path = "/{id}/switch")
+    public ResponseEntity<Heater> update(@PathVariable Long id) {
+        HeaterEntity entity = heaterDao.findById(id).orElse(null);
+        if (entity == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        double newHeaterValue = 0.0;
+        if (entity.getHeaterStatus().getValue()==0.0){
+            newHeaterValue = 1.0;
+        }
+        SensorEntity heaterStatus = entity.getHeaterStatus();
+        heaterStatus.setValue(newHeaterValue);
+        return ResponseEntity.ok(HeaterMapper.of(entity));
     }
 }

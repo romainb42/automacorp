@@ -5,5 +5,5 @@ import com.emse.spring.automacorp.model.SensorEntity;
 
 import java.util.Set;
 
-public record BuildingCommand(String name, SensorEntity outsideTemperature, Set<RoomEntity> rooms) {
+public record BuildingCommand(String name, Double outsideTemperature) {
 }

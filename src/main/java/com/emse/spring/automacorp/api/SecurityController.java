@@ -1,6 +1,6 @@
 package com.emse.spring.automacorp.api;
 
-/*
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,4 +23,4 @@ public class SecurityController {
         return new User(userDetails.getUsername());
     }
 }
-*/
+
