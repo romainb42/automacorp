@@ -1,6 +1,6 @@
 # Automacorp backend
 
-Note : This is <b>not</b> the backend used alongside my Automacorp frontend. The one that is used with the frontend is [here](http://github.com/erwinmartin06/automacorp).
+## Note : This is <b>not</b> the backend used alongside my Automacorp frontend. The one that is used with the frontend is [here](http://github.com/erwinmartin06/automacorp).
 
 This is the backend of the Automacorp project done during the web, mobile and embedded programming courses. The goal was to simulate a building, its rooms, windows, heaters, temperature sensors,... to use electricity more wisely during winter.
 
