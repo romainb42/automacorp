@@ -26,4 +26,8 @@ public interface WindowDao extends JpaRepository<WindowEntity, Long>, WindowDaoC
             "SET s.value = :windowValue " +
             "WHERE s.id IN (SELECT w.windowStatus.id FROM WindowEntity w WHERE w.room.id = :roomId)")
     void updateWindowStatusByRoomId(@Param("roomId") Long roomId, @Param("windowValue") Double windowValue);
+
+    @Modifying
+    @Query("delete from WindowEntity c where c.room.building.id = ?1")
+    void deleteWindowsByBuildingId(Long buildingId);
 }

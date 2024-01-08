@@ -103,6 +103,7 @@ public class RoomController {
 
     @DeleteMapping(path = "/{id}")
     public void delete(@PathVariable Long id) {
+        sensorDao.deleteByRoomId(id);
         windowDao.deleteWindowsByRoomId(id);
         heaterDao.deleteHeatersByRoomId(id);
         roomDao.deleteById(id);

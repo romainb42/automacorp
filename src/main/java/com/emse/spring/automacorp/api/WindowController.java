@@ -85,6 +85,7 @@ public class WindowController {
 
     @DeleteMapping(path = "/{id}")
     public void delete(@PathVariable Long id) {
+        sensorDao.deleteByWindowId(id);
         windowDao.deleteById(id);
     }
 

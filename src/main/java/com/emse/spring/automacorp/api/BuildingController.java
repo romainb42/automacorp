@@ -1,7 +1,6 @@
 package com.emse.spring.automacorp.api;
 
-import com.emse.spring.automacorp.dao.BuildingDao;
-import com.emse.spring.automacorp.dao.SensorDao;
+import com.emse.spring.automacorp.dao.*;
 import com.emse.spring.automacorp.dto.Building;
 import com.emse.spring.automacorp.dto.BuildingMapper;
 import com.emse.spring.automacorp.model.BuildingEntity;
@@ -23,10 +22,16 @@ public class BuildingController {
 
     private final BuildingDao buildingDao;
     private final SensorDao sensorDao;
+    private final WindowDao windowDao;
+    private final RoomDao roomDao;
+    private final HeaterDao heaterDao;
 
-    public BuildingController(BuildingDao buildingDao, SensorDao sensorDao) {
+    public BuildingController(BuildingDao buildingDao, SensorDao sensorDao, WindowDao windowDao, RoomDao roomDao, HeaterDao heaterDao) {
         this.buildingDao = buildingDao;
         this.sensorDao = sensorDao;
+        this.windowDao = windowDao;
+        this.roomDao = roomDao;
+        this.heaterDao = heaterDao;
     }
 
     @GetMapping
@@ -73,6 +78,10 @@ public class BuildingController {
 
     @DeleteMapping(path = "/{id}")
     public void delete(@PathVariable Long id) {
+        sensorDao.deleteByBuildingId(id);
+        windowDao.deleteWindowsByBuildingId(id);
+        heaterDao.deleteHeaterByBuildingId(id);
+        roomDao.deleteRoomsByBuildingId(id);
         buildingDao.deleteById(id);
     }
 
