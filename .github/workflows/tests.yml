@@ -1,72 +1,39 @@
-name: Java Tests and Release
+name: Java CI with Gradle
 
-on:
-  push:
-    branches:
-      - main
-      - 'releases/*'
-  pull_request:
-    branches:
-      - main
+on: [push]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Java
-        uses: actions/setup-java@v2
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          distribution: 'adopt'
           java-version: '17'
-
+          distribution: 'temurin'
       - name: Build with Gradle
-        run: |
-          ./gradlew build
-
-      - name: Run tests
-        run: |
-          ./gradlew test
-
+        uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+        with:
+          arguments: build
   release:
-    needs: test
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Set up Java
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'adopt'
-          java-version: '17'
-
-      - name: Create GitHub Release
+      - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
         with:
-          files: |
-            build/libs/*.jar
-            # Add other artifacts or documentation files
-
-      - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: release-artifacts
-          path: |
-            build/libs/*.jar
-            # Add other artifacts or documentation files
-
-      - name: Set Release Version
-        run: |
-          echo "RELEASE_VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
-
-      - name: Display Release URL
-        run: |
-          echo "Release URL: ${{ steps.create_release.outputs.upload_url }}"
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: false
+          prerelease: false
