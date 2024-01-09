@@ -17,6 +17,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+/** This API serves to manipulate rooms.
+ * @author Céline Ni
+ * @version 2.3
+ */
+
 @CrossOrigin
 @RestController
 @RequestMapping("/api/rooms")
@@ -39,6 +45,10 @@ public class RoomController {
         this.sensorDao = sensorDao;
     }
 
+    /**
+     * Often the first function called during the acces to this API
+     * @return List of all rooms
+     */
     @GetMapping
     public List<Room> findAll() {
         return roomDao.findAll()
@@ -48,11 +58,22 @@ public class RoomController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * This function returns the room associated to the given room_id
+     * @param room_id
+     * @return room
+     */
     @GetMapping(path = "/{id}")
     public Room findById(@PathVariable Long id) {
         return roomDao.findById(id).map(RoomMapper::of).orElse(null);
     }
 
+    /**
+     * Create a room by using the information send by the frontend. A "current temperature" sensor also is created
+     * during this process using the value of currentTemperature.
+     * @param RoomCommand (String name, Integer floor, Double currentTemperature, Double targetTemperature, Long buildingId)
+     * @return the server response of the request (200 : everything is fine, 401 error,...)
+     */
     @PostMapping
     public ResponseEntity<Room> create(@RequestBody RoomCommand room) {
         BuildingEntity building = buildingDao.findById(room.buildingId()).orElse(null);
@@ -69,6 +90,11 @@ public class RoomController {
         return ResponseEntity.ok(RoomMapper.of(saved));
     }
 
+    /**
+     * Modify a room information using its id and new information
+     * @param room_id, RoomCommand
+     * @return the server response of the request (200 : everything is fine, 401 error,...)
+     */
     @PutMapping(path = "/{id}")
     public ResponseEntity<Room> update(@PathVariable Long id, @RequestBody RoomCommand room) {
         if (id==null && room==null){
@@ -101,6 +127,10 @@ public class RoomController {
         }
     }
 
+    /**
+     * Delete a room, its windows, heaters and associated sensors using the room_id
+     * @param room_id
+     */
     @DeleteMapping(path = "/{id}")
     public void delete(@PathVariable Long id) {
         sensorDao.deleteByRoomId(id);
@@ -109,6 +139,11 @@ public class RoomController {
         roomDao.deleteById(id);
     }
 
+    /**
+     * Open all the windows of a room using its id
+     * @param room_id
+     * @return the server response of the request (200 : everything is fine, 401 error,...)
+     */
     @PutMapping(path = "/{id}/openWindows")
     public ResponseEntity<Room> openWindows(@PathVariable Long id) {
         RoomEntity entity = roomDao.findById(id).orElse(null);
@@ -120,6 +155,11 @@ public class RoomController {
         return ResponseEntity.ok(RoomMapper.of(entity));
     }
 
+    /**
+     * Close all the windows of a room using its id
+     * @param room_id
+     * @return the server response of the request (200 : everything is fine, 401 error,...)
+     */
     @PutMapping(path = "/{id}/closeWindows")
     public ResponseEntity<Room> closeWindows(@PathVariable Long id) {
         RoomEntity entity = roomDao.findById(id).orElse(null);
