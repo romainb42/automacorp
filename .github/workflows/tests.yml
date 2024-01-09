@@ -1,7 +1,11 @@
-name: Java Tests
+name: Java Tests and Release
 
 on:
   push:
+    branches:
+      - main
+      - 'releases/*'
+  pull_request:
     branches:
       - main
 
@@ -20,7 +24,49 @@ jobs:
           java-version: '17'
 
       - name: Build with Gradle
-        run: ./gradlew build
+        run: |
+          ./gradlew build
 
       - name: Run tests
-        run: ./gradlew test
+        run: |
+          ./gradlew test
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            build/libs/*.jar
+            # Add other artifacts or documentation files
+
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-artifacts
+          path: |
+            build/libs/*.jar
+            # Add other artifacts or documentation files
+
+      - name: Set Release Version
+        run: |
+          echo "RELEASE_VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      - name: Display Release URL
+        run: |
+          echo "Release URL: ${{ steps.create_release.outputs.upload_url }}"
